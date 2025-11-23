@@ -302,7 +302,6 @@ export const updateUserCoverImage = asyncHandler(async(req, res) => {
         $set:{
             coverImage: coverImage.url
         },
-       
     },
     {
        new:true
@@ -318,3 +317,78 @@ export const updateUserCoverImage = asyncHandler(async(req, res) => {
         )
     )
 })
+
+export const getUserChannelProfile = asyncHandler( async(req, res) => {
+    const { username } = req.params
+    if(!username){
+        throw new ApiError(400, "Username is missing.")
+    }
+
+    const channel = await User.aggregate([
+        {
+            // username ley channel filter gareko
+            $match: username?.toLowerCase()
+        },
+        {
+            // Channel ma kati subscribers chan check garya 
+            $lookup:{
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            // tyo channel ley aru kati ota channel haru lai subscribe garya cha
+            $lookup : {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribed"
+            }
+        },
+        {
+            // mathi ko Channel variable ma additional fields add garya
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                subscribedCount: {
+                    $size: "$subscribed"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            // Frontend ma k k pathauni(pathauni fields ko value 1) ra k k exclude garni
+            $project:{
+                fullName:1,
+                username:1,
+                subscribersCount: 1,
+                subscribedCount: 1,
+                coverImage: 1,
+                avatar: 1,
+                isSubscribed: 1 
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(400, "Channel doesn't exist.")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            channel[0],
+            "Channel data fetched successfully."
+        )
+    )
+
+} )
