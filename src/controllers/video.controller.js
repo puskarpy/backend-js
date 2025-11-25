@@ -93,6 +93,6 @@ export const uploadVideo = asyncHandler( async(req, res) => {
     )
 } )
 
-const getVideoById = asyncHandler( async(req, res) => {
+export const getVideoById = asyncHandler( async(req, res) => {
     const video = await Video.findByIdAndUpdate(req.params.videoId).populate("owner", "fullName", "username", "avatar")
 })

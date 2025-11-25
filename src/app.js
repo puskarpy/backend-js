@@ -1,7 +1,8 @@
 import express, { urlencoded } from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import userRouter from './routes/user.router.js'
+import userRouter from './routes/user.route.js'
+import commentRouter from './routes/comment.route.js'
 
 const app = express()
 
@@ -18,6 +19,7 @@ app.use(cookieParser())
 
 // Router Middleware
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/comments", commentRouter)
 app.get("/", (req, res) => {
     res.send("Hello World.")
 })

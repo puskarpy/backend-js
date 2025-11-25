@@ -244,7 +244,6 @@ export const updateUserDetails = asyncHandler(async(req, res) => {
     const user = await User.findByIdAndUpdate(req.user._id, {
         $set:{
             email, fullName
-
         }
     }, {
         new: true
