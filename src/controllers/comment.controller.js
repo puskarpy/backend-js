@@ -90,7 +90,10 @@ export const updateComment = asyncHandler( async(req, res) => {
         throw new ApiError(400, "Content required.")
     }
 
-    const updatedComment = await Comment.findByIdAndUpdate(commentId, 
+    const updatedComment = await Comment.findOneAndUpdate({
+        _id: commentId,
+        owner: req.user._id
+    }, 
         {
             $set:{
             content
@@ -112,7 +115,10 @@ export const updateComment = asyncHandler( async(req, res) => {
 export const deleteComment = asyncHandler( async(req, res) => {
     const {commentId} = req.params
 
-    const deletedComment = await Comment.findByIdAndDelete(commentId)
+    const deletedComment = await Comment.findOneAndDelete({
+        _id: commentId,
+        owner: req.user._id
+    })
 
     if(!deletedComment){
         throw new ApiError(400, "Couldn't find error.")
