@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import { Video } from "../models/video.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js"
 
 export const getAllVideos = asyncHandler( async(req, res) => {
 
@@ -94,5 +94,121 @@ export const uploadVideo = asyncHandler( async(req, res) => {
 } )
 
 export const getVideoById = asyncHandler( async(req, res) => {
-    const video = await Video.findByIdAndUpdate(req.params.videoId).populate("owner", "fullName", "username", "avatar")
+
+    const {videoId} = req.params
+
+    const video = await Video.findOne({
+        _id:videoId
+    }).populate("owner", "fullName", "username", "avatar")
+
+    if(!video){
+        throw new ApiError(500, "Couldn't find the video.")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            video,
+            "Video found."
+        )
+    )
 })
+
+export const updateVideo = asyncHandler( async(req, res) => {
+    const {videoId} = req.params
+    const {title, description } = req.body
+
+    if(!title || !description){
+        throw new ApiError(400, "Atleast one field is required.")
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(videoId, {
+        $set:{
+            title, content
+        }
+    },
+    {
+        new: true
+    })
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            updatedVideo,
+            "Video details updated successfully."
+        )
+    )
+} )
+
+export const deleteVideo = asyncHandler( async(req,res) => {
+    const {videoId} = req.params
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(404, "Video not found.")
+    }
+    
+    if(video.videoFile?.public_id){
+        await deleteFromCloudinary(video.videoFile.public_id)
+    }
+
+    if(video.thumbnail?.public_id){
+        await deleteFromCloudinary(video.thumbnail.public_id)
+    }
+
+    await Video.findByIdAndDelete(videoId)
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {},
+            "Video deleted."
+        )
+    )
+})
+
+export const updateThumbnail = asyncHandler( async(req, res) =>{
+    const newThumbnailPath = req.file?.path
+    const {videoId} = req.params
+
+    if(!newThumbnailPath){
+        throw new ApiError(400, "Thumbnail image required.")
+    }
+
+    const newThumbnail = await uploadOnCloudinary(newThumbnailPath)
+
+    if(!newThumbnail.url){
+        throw new ApiError(400, "Thumbnail image required.")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(404, "Video not found.")
+    }
+
+    if(video.thumbnail.public_id){
+        await deleteFromCloudinary(video.thumbnail.public_id)
+    }
+
+    video.thumbnail = {
+        url: newThumbnail.url,
+        public_id: newThumbnail.public_id
+    }
+
+    const updatedVideo = await video.save()
+
+    if(!updatedVideo){
+        throw new ApiError(500, "Couldn't change thumbnail.")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            updatedVideo,
+            "Thumbnail updated successfully."
+        )
+    )
+
+} )

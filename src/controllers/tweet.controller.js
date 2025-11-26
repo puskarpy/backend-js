@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 
 export const createTweet = asyncHandler( async(req, res) => {
     const {content}= req.body
+    
     if(!content){
         throw new ApiError(400,"Content is required.")
     }
