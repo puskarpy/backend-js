@@ -114,7 +114,7 @@ export const getVideoById = asyncHandler( async(req, res) => {
     )
 })
 
-export const updateVideo = asyncHandler( async(req, res) => {
+export const updateVideoDetails = asyncHandler( async(req, res) => {
     const {videoId} = req.params
     const {title, description } = req.body
 
