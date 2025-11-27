@@ -48,9 +48,11 @@ export const getAllVideos = asyncHandler( async(req, res) => {
 } )
 
 export const uploadVideo = asyncHandler( async(req, res) => {
+    console.log(req.body)
     const {title, description} = req.body
+    console.log(title, description)
 
-    if(!title || !description){
+    if(!(title || description)){
         throw new ApiError(400, "All fields required.")
     }
 
@@ -72,24 +74,27 @@ export const uploadVideo = asyncHandler( async(req, res) => {
         title,
         description,
         videoFile : {
-            url: video,
+            url: video.url,
             public_id: video.public_id
         },
         thumbnail: {
-            url: thumbnail,
+            url: thumbnail.url,
             public_id: thumbnail.public_id
         },
         duration: video.duration
-    }) 
+    })
+    
 
     if(!newVideo){
         throw new ApiError(500,"Couldn't upload video.")
     }
 
     return res.status(200).json(
-        200,
-        newVideo,
-        "Video created successfully."
+        new ApiResponse(
+            200,
+            newVideo,
+            "Video created successfully."
+        )
     )
 } )
 
